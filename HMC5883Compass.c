@@ -4,12 +4,10 @@
 #include "hardware/uart.h"
 #include "math.h"
 
-// I2C defines
-// This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
+
 #define I2C_PORT i2c0
-#define I2C_SDA 0
-#define I2C_SCL 1
+#define I2C_SDA 8
+#define I2C_SCL 9
 #define addr 0x0D
 
 float get_heading(int16_t x, int16_t y);
@@ -17,7 +15,7 @@ void calibrate_compass(int16_t x, int16_t y, int16_t* x_corrected, int16_t* y_co
 
 void compass_init(void) 
 {
-    // Wait for compass to boot up fr
+    // Wait for compass to boot up
     sleep_ms(2000);
     uint8_t config[2];
     config[0] = 0x09;
@@ -52,15 +50,16 @@ float get_heading(int16_t x, int16_t y)
     return heading_deg;
 }
 
-void calibrate_compass(int16_t x, int16_t y, int16_t* x_corrected, int16_t* y_corrected)
+// Rotate the compass 360 degrees and copy the raw values to excel to get the min and max
+void calibrate_compass(int16_t x, int16_t y, int16_t* x_corrected, int16_t* y_corrected) // Calculate midpoint to use as offset to get ± out
 {
     int16_t x_min = -113, x_max = 1210;
     int16_t y_min = -1872, y_max = 23;
-    //int16_t z_min = -485, z_max = 358;
+    //int16_t z_min = -485, z_max = 358; (use if necessary)
 
     int16_t x_offset = (x_min + x_max) / 2;
     int16_t y_offset = (y_min + y_max) / 2;
-
+    // Correct x and y with new offset and store
     *x_corrected = x - x_offset;
     *y_corrected = y - y_offset;
 }
@@ -98,14 +97,12 @@ int main()
 
     // I2C Initialisation. Using it at 400Khz.
     i2c_init(I2C_PORT, 400000);
-    
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
-    //initialize the compass uwu
+    //initialize the compass
     compass_init();
-    //read the compass uwu
     while(1) 
     {
         float car_heading = read_compass();
